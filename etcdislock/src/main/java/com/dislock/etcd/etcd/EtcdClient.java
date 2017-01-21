@@ -6,26 +6,23 @@ import com.coreos.jetcd.api.WatchGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.netty.NettyChannelBuilder;
 
-/**
- * Created by yeyc on 2017/1/19.
- */
+
 public class EtcdClient {
-    private  KVGrpc.KVBlockingStub kvBlockingStub;
-    private  WatchGrpc.WatchBlockingStub watchBlockingStub;
-    private  LeaseGrpc.LeaseBlockingStub leaseBlockingStub;
+    private KVGrpc.KVBlockingStub kvBlockingStub;
+    private WatchGrpc.WatchStub watchStub;
+    private LeaseGrpc.LeaseBlockingStub leaseBlockingStub;
 
 
-    public EtcdClient(String dnsName){
-        final ManagedChannel channel = channelBuild(dnsName);
+    public EtcdClient(String url) {
+        final ManagedChannel channel = channelBuild(url);
         this.kvBlockingStub = KVGrpc.newBlockingStub(channel);
-        this.watchBlockingStub = WatchGrpc.newBlockingStub(channel);
+        this.watchStub = WatchGrpc.newStub(channel);
         this.leaseBlockingStub = LeaseGrpc.newBlockingStub(channel);
     }
 
 
-    private ManagedChannel channelBuild(String dnsName){
-        //use grpc default DnsNameResolverProvider,so you  should be set etcd real multiple host:port  to   hosts
-        return NettyChannelBuilder.forTarget(dnsName).usePlaintext(true).build();
+    private ManagedChannel channelBuild(String url) {
+        return NettyChannelBuilder.forTarget(url).nameResolverFactory(new EtcdNameResolverProvider()).usePlaintext(true).build();
     }
 
 
@@ -33,8 +30,8 @@ public class EtcdClient {
         return kvBlockingStub;
     }
 
-    public WatchGrpc.WatchBlockingStub getWatchBlockingStub() {
-        return watchBlockingStub;
+    public WatchGrpc.WatchStub getWatchStub() {
+        return watchStub;
     }
 
     public LeaseGrpc.LeaseBlockingStub getLeaseBlockingStub() {
