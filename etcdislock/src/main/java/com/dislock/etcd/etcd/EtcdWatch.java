@@ -19,19 +19,17 @@ public class EtcdWatch {
     private final EtcdClient etcdClient;
     private final EventBus eventBus;
     private final String key;
-    private final LockListener listener;
 
-    public EtcdWatch(String key,EtcdClient etcdClient,LockListener listener) {
+    public EtcdWatch(String key, EtcdClient etcdClient) {
         this.etcdClient = etcdClient;
         this.eventBus = new EventBus("dislock_".concat(key));
         this.eventBus.register(new WatchErrorHandler());
 
-        this.key = key;
-        this.listener = listener;
+        this.key = EtcdOperation.PRE.concat(key);
     }
 
-    public void watch( ) {
-        final ByteString byteStringKey  = ByteString.copyFromUtf8(key);
+    public void watch(LockListener listener) {
+        final ByteString byteStringKey = ByteString.copyFromUtf8(key);
 
         final StreamObserver<WatchRequest> watch = etcdClient.getWatchStub().watch(new StreamObserver<WatchResponse>() {
             @Override
@@ -49,7 +47,7 @@ public class EtcdWatch {
             @Override
             public void onError(Throwable t) {
                 logger.error("watch lock err!", t);
-                eventBus.post(new WatchErrorEvent());
+                eventBus.post(new WatchErrorEvent(listener));
             }
 
             @Override
@@ -65,17 +63,26 @@ public class EtcdWatch {
 
     private class WatchErrorHandler {
         private static final long DELAY_TIME = 10L;
+
         @Subscribe
         @AllowConcurrentEvents
-        void listener() throws InterruptedException {
+        void listener(WatchErrorEvent watchErrorEvent) throws InterruptedException {
             TimeUnit.SECONDS.sleep(DELAY_TIME);
-            watch();
+            watch(watchErrorEvent.getListener());
         }
     }
 
     private class WatchErrorEvent {
-        WatchErrorEvent() {
+        private LockListener listener;
+
+        WatchErrorEvent(LockListener listener) {
+            this.listener = listener;
         }
+
+        LockListener getListener() {
+            return listener;
+        }
+
     }
 
 }

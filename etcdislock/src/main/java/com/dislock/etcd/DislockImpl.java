@@ -25,8 +25,8 @@ class DislockImpl implements Dislock,LockListener{
     DislockImpl(String key,EtcdClient etcdClient){
         this.key = key;
         this.etcdOperation = new EtcdOperation(etcdClient);
-        EtcdWatch etcdWatch = new EtcdWatch(key, etcdClient, this);
-        etcdWatch.watch();
+        EtcdWatch etcdWatch = new EtcdWatch(key, etcdClient);
+        etcdWatch.watch(this);
     }
 
     @Override
@@ -36,7 +36,7 @@ class DislockImpl implements Dislock,LockListener{
         LockTemp.lock();
         try {
             //如果没有获取到锁，等其它人释放
-            if(etcdOperation.acquire(key)){
+            if(!etcdOperation.acquire(key)){
                 try {
                     //阻塞等待有人释放锁
                     notify.await();
@@ -47,7 +47,7 @@ class DislockImpl implements Dislock,LockListener{
                 lock();
             }
         }finally {
-            lock.unlock();
+            LockTemp.unlock();
         }
     }
 
@@ -61,7 +61,7 @@ class DislockImpl implements Dislock,LockListener{
                 logger.error("key={},释放锁失败" ,key );
             }
         }finally {
-            lock.unlock();
+            LockTemp.unlock();
         }
     }
 
@@ -72,7 +72,7 @@ class DislockImpl implements Dislock,LockListener{
         try {
             notify.signalAll();
         }finally {
-            lock.unlock();
+            LockTemp.unlock();
         }
     }
 }

@@ -9,7 +9,7 @@ public class EtcdOperation {
     private EtcdClient etcdClient;
 
     private static final long LEASE_EXPIRED_SECONDS = 5;
-    private final static String PRE = "ETCD_DISLOCK_";
+    final static String PRE = "ETCD_DISLOCK_";
     private final static String DEFAULT_VALUE = "EXIST";
 
 
@@ -63,7 +63,7 @@ public class EtcdOperation {
     }
 
     private PutRequest buildPutRequest(final ByteString key, final ByteString value, long leaseId) {
-        return PutRequest.newBuilder().setValue(key).setValue(value).setLease(leaseId).setPrevKv(true).build();
+        return PutRequest.newBuilder().setKey(key).setValue(value).setLease(leaseId).build();
     }
 
     private Compare buildCompare(final ByteString key, final ByteString value) {
