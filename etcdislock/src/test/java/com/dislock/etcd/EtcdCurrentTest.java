@@ -6,6 +6,6 @@ package com.dislock.etcd;
 public class EtcdCurrentTest {
     public static void main(String[] args) {
         SimpleExecutor simpleExecutor = new SimpleExecutor(new EtcdDemo(JmhArgument.dislock));
-        simpleExecutor.execute(10,60);
+        simpleExecutor.execute(25,60);
     }
 }

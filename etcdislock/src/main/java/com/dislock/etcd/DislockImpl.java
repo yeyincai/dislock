@@ -12,7 +12,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 
-class DislockImpl implements Dislock,LockListener{
+class DislockImpl implements Dislock, LockListener {
 
     private Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -22,7 +22,7 @@ class DislockImpl implements Dislock,LockListener{
     private final Condition notify = lock.newCondition();
 
 
-    DislockImpl(String key,EtcdClient etcdClient){
+    DislockImpl(String key, EtcdClient etcdClient) {
         this.key = key;
         this.etcdOperation = new EtcdOperation(etcdClient);
         EtcdWatch etcdWatch = new EtcdWatch(key, etcdClient);
@@ -36,32 +36,25 @@ class DislockImpl implements Dislock,LockListener{
         LockTemp.lock();
         try {
             //如果没有获取到锁，等其它人释放
-            if(!etcdOperation.acquire(key)){
+            if (!etcdOperation.acquire(key)) {
                 try {
                     //阻塞等待有人释放锁
                     notify.await();
                 } catch (InterruptedException e) {
-                    logger.error("key={}等待获取锁失败",key,e);
+                    logger.error("key={}等待获取锁失败", key, e);
                 }
                 //继续获取
                 lock();
             }
         }finally {
-            LockTemp.unlock();
+          LockTemp.unlock();
         }
     }
 
     @Override
     public void unlock() {
-        final Lock LockTemp = this.lock;
-        LockTemp.lock();
-        try {
-            //释放锁
-            if(!etcdOperation.release(key)){
-                logger.error("key={},释放锁失败" ,key );
-            }
-        }finally {
-            LockTemp.unlock();
+        if (!etcdOperation.release(key)) {
+            logger.error("key={},释放锁失败", key);
         }
     }
 
@@ -70,8 +63,8 @@ class DislockImpl implements Dislock,LockListener{
         final Lock LockTemp = this.lock;
         LockTemp.lock();
         try {
-            notify.signalAll();
-        }finally {
+            notify.signal();
+        } finally {
             LockTemp.unlock();
         }
     }
